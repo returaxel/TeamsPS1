@@ -1,6 +1,4 @@
-# teamsps1-public
-
-Script to manage Teams. Now completely without error handling!
+Script to manage Teams. Now completely without error handling! 😎
 
 ## Features
 
