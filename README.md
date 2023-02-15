@@ -9,11 +9,11 @@ Script to manage Teams. Now completely without error handling! 😎
 * Activate Outlook addin
 
 ## Running script
-
+```
 Scheduled Task
 Packaged as win32 application bundled with backgrounds, for a one-time operation.
 Proactive Remediation
-
+```
 ## Function for fetching background images within a .zip from an URL
 
 Replace the other one with this if needed.
