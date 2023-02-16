@@ -1,14 +1,15 @@
 <#
 .DESCRIPTION
-    Install and update Teams
+    Install, update and start Teams
     Download company background images
+    CTRL + F "editme"
 
 .EXAMPLE
     Deploy as a scheduled task, run when device is inactive for x minutes
     
 .NOTES
     Created: 2021-03-xx
-    Updated: 2023-02-16 (typo, added info)
+    Updated: 2023-02-16 (corrected things, thnx SkyN9ne)
     Author: returaxel
     ToDo: error handling
 #>
@@ -34,27 +35,22 @@ function Get-TeamsInstallationCheck {
 
     Write-Host "`n[info] Status:"
     
-    if ($checkSwi) {
-        $dedCheck = Test-Path $teamsDed
-        $regCheck = (Get-ItemProperty $teamsReg).LoggedInOnce -eq 1
-    
-        if ($dedCheck -or !($regCheck)) {
+    if ($checkSwi) {  
+        if ((Test-Path $teamsDed) -or ((Get-ItemProperty $teamsReg).LoggedInOnce -ne 1)) {
             Write-Host "`t$($teamsDed)" -ForegroundColor Red  
             return Start-TeamsInstallation
         }
     }
 
-    $insCheck = Test-Path $teamsSet
-
-    if ($insCheck) {
+    if ((Test-Path $teamsSet)) {
         $teamsVer = (Get-Content $teamsSet | ConvertFrom-Json).Version
-        Write-Host "`tInstalled $($teamsVer)" -ForegroundColor Green 
+        Write-Host "`tInstalled: $($teamsVer)" -ForegroundColor Green 
     } else {
-        Write-Host "`tInstallation failed... $($teamsVer)" -ForegroundColor Green 
+        Write-Host "`tInstallation failed..." -ForegroundColor Red 
     }
 }
 
-# Update-check 
+# Update teams
 function Start-TeamsUpdate {
 
     [CmdletBinding()]
@@ -68,7 +64,7 @@ function Start-TeamsUpdate {
 
     Write-Host "`n[info] Update:`n`tCheck for updates if (update.exe).accesstime < 72 hours`n`t Last access: $($timeSpan) hours ago"
 
-    if ($timeSpan -ge 72) {
+    if ($timeSpan -ge 72) { # editme greater number to run less often
         Write-Host "`n[info] Update: Checking for updates..." -ForegroundColor Yellow
         Start-Process -FilePath $teamsUpd -ArgumentList "-s","--processStart teams.exe" -PassThru
         Start-Sleep 3
@@ -82,11 +78,8 @@ function Start-TeamsInstallation {
     param (
         [Parameter()][string]$teamsUrl = "https://go.microsoft.com/fwlink/p/?LinkID=869426&culture=en-us&country=WW&lm=deeplink&lmsrc=groupChatMarketingPageWeb&cmpid=directDownloadWin64",
         [Parameter()][string]$teamsUpd = "$($env:LOCALAPPDATA)\Microsoft\Teams\update.exe",
-        [Parameter()][string]$teamsExe = "$($env:TEMP)\XXXX\Teams\Teams_windows_x64.exe" # .EXE saved here
+        [Parameter()][string]$teamsExe = "$($env:TEMP)\TeamsPS1\Teams_windows_x64.exe" # .EXE saved here
     )
-
-    # Write-Host "`n[info] Action:`n`tStopping Teams (if running)..."
-    # Get-Process teams -ErrorAction SilentlyContinue | Stop-Process -ErrorAction SilentlyContinue -PassThru
 
     if (!(Test-Path $teamsExe)) {
         Write-Host "`tDownloading..."
@@ -95,16 +88,21 @@ function Start-TeamsInstallation {
 
     Write-Host "`tInstalling..."
 
-    Start-Process -FilePath $teamsExe -ArgumentList "-s" -Wait -PassThru
-    Start-Process -FilePath $teamsUpd -ArgumentList "--processStart teams.exe" -PassThru
+    # Install silently
+    Start-Process -FilePath $teamsExe -ArgumentList "-s" -Wait
 
+    # Start
+    Start-Process -FilePath $teamsUpd -ArgumentList "--processStart teams.exe"
+
+    # Wait for teams process to start
     while (!$pcsAge) {
         $teamsPcs = Get-Process teams -ErrorAction SilentlyContinue
 
         if ($teamsPcs) {
             $pcsAge = $teamsPcs[0].StartTime.AddSeconds(8) -lt [datetime]::Now 
         }
-        Start-Sleep 2
+
+        Start-Sleep 4
     }
     Get-TeamsInstallationCheck
 }
@@ -121,14 +119,14 @@ function Get-TeamsPS1Images {
     
     Write-Host "`n[info] Images:"
 
-    if (Test-Path $copySrc -ErrorAction SilentlyContinue) {
+    if (Test-Path $copySrc) {
 
         if (!(Test-Path $copyDst)) {
             mkdir $copyDst
         }
 
-        $bgRef = Get-ChildItem $copySrc -Name -ErrorAction SilentlyContinue
-        $bgDiff = Get-ChildItem $copyDst -Exclude *thumb* -Name -ErrorAction SilentlyContinue
+        $bgRef = Get-ChildItem $copySrc -Name 
+        $bgDiff = Get-ChildItem $copyDst -Exclude *thumb* -Name 
 
         foreach ($img in $bgRef) {
             if ($img -notin $bgDiff) {
@@ -136,13 +134,13 @@ function Get-TeamsPS1Images {
                 $imgCount += 1
             }
         }
-        # Update local numbers after job is done
         return Write-Host "`tImages updated: $($imgCount)"
     }
-     Write-Host "`tNetwork not available, no images were downloaded." -ForegroundColor Yellow
+     Write-Host "`tNetwork unavailable." -ForegroundColor Yellow
 }
 
 $timed =  Measure-Command {
+
 # Create directory for files and transcript
 if (!(Test-Path $logDir)) {
     $null = mkdir $logDir
@@ -160,13 +158,13 @@ Start-TeamsUpdate
 # Only copy images if fileshare is accessable
 Get-TeamsPS1Images 
 
-# Activate TeamsAddin for Outlook 
+# Activate Teams Add-in for Outlook 
 $addinPath = "HKCU:\\SOFTWARE\Microsoft\Office\Outlook\Addins\TeamsAddin.FastConnect"
 $addinCheck = (Get-ItemProperty -Path $addinPath -ErrorAction SilentlyContinue).LoadBehavior -ne 3
 
 if ($addinCheck) {
-    Write-Host "`n[info] Addin: Enable TeamsAddin for Outlook [ LoadBehavior = 3 ]"
-    Set-ItemProperty -Path $addinPath -Name LoadBehavior -Value 3 -ErrorAction SilentlyContinue
+    Write-Host "`n[info] Add-in:`n`tEnabled Teams Add-in for Outlook [ LoadBehavior = 3 ]"
+    Set-ItemProperty -Path $addinPath -Name LoadBehavior -Value 3
 }
 
 } # END Measure command
