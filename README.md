@@ -1,12 +1,16 @@
 Script to manage Teams. Now completely without error handling! 😎
 
-## Features
+## teamsps1 Features
 
 * Install Teams
 * Updates Teams if not done recently
 * Download company background images
   * Netshare, locally or from URL
 * Activate Outlook addin
+
+## teamsfw Features
+
+* Add firewall rules for *main* device user (not ideal for shared devices)
 
 ## Running script
 ```
