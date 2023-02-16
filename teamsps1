@@ -1,9 +1,24 @@
+<#
+.DESCRIPTION
+    Install and update Teams
+    Download company background images
+
+.EXAMPLE
+    Deploy as a scheduled task, run when device is inactive for x minutes
+    
+.NOTES
+    Created: 2021-03-xx
+    Updated: 2023-02-16 (typo, added info)
+    Author: returaxel
+    ToDo: error handling
+#>
+
 # Hide progress, save time
 $ProgressPreference = 'SilentlyContinue'
 
 # Log
 $logDir = "$($env:TEMP)\TeamsPS1\"
-$logTxt = '{0}{1}' -F $logDir,"teamsp1.txt"
+$logTxt = '{0}{1}' -F $logDir,"teamsps1.txt"
 
 ### ---------- Installation check
 function Get-TeamsInstallationCheck { 
