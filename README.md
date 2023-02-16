@@ -8,9 +8,13 @@ Script to manage Teams. Now completely without error handling! 😎
   * Netshare, locally or from URL
 * Activate Outlook addin
 
+*Run in user context*
+
 ## teamsfw Features
 
 * Add firewall rules for *main* device user (not ideal for shared devices)
+
+*Run as system/admin*
 
 ## Running script
 ```
